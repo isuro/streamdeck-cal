@@ -1,57 +1,59 @@
 {
-	"Name": "cal",
-	"Version": "0.1.0",
-	"Author": "Isaac",
-	"Actions": [
-		{
-			"Name": "Next event",
-			"UUID": "com.isaac.cal.next",
-			"Icon": "imgs/actions/counter/icon",
-			"Tooltip": "Shows next calendar event",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/Black",
-					"TitleAlignment": "middle"
-				}
-			]
-		},
-		{
-			"Name": "Current event",
-			"UUID": "com.isaac.cal.current",
-			"Icon": "imgs/actions/counter/icon",
-			"Tooltip": "Shows next calendar event",
-			"Controllers": [
-				"Keypad"
-			],
-			"States": [
-				{
-					"Image": "imgs/Black",
-					"TitleAlignment": "middle"
-				}
-			]
-		}
-	],
-	"Category": "cal",
-	"CategoryIcon": "imgs/plugin/category-icon",
-	"CodePath": "bin/plugin.js",
-	"Description": "pulls from mac cal",
-	"Icon": "imgs/plugin/marketplace",
-	"SDKVersion": 2,
-	"Software": {
-		"MinimumVersion": "6.5"
-	},
-	"OS": [
-		{
-			"Platform": "mac",
-			"MinimumVersion": "10.15"
-		}
-	],
-	"Nodejs": {
-		"Version": "20",
-		"Debug": "enabled"
-	},
-	"UUID": "com.isaac.cal"
+    "Name": "cal",
+    "Version": "0.1.0",
+    "Author": "Isaac",
+    "Actions": [
+        {
+            "Name": "Next event",
+            "UUID": "com.isaac.cal.next",
+            "PropertyInspectorPath": "pi/inspector.html",
+            "Icon": "imgs/actions/counter/icon",
+            "Tooltip": "Shows next calendar event",
+            "Controllers": [
+                "Keypad"
+            ],
+            "States": [
+                {
+                    "Image": "imgs/Black",
+                    "TitleAlignment": "middle"
+                }
+            ]
+        },
+        {
+            "Name": "Current event",
+            "UUID": "com.isaac.cal.current",
+            "PropertyInspectorPath": "pi/empty-inspector.html",
+            "Icon": "imgs/actions/counter/icon",
+            "Tooltip": "Shows next calendar event",
+            "Controllers": [
+                "Keypad"
+            ],
+            "States": [
+                {
+                    "Image": "imgs/Black",
+                    "TitleAlignment": "middle"
+                }
+            ]
+        }
+    ],
+    "Category": "cal",
+    "CategoryIcon": "imgs/plugin/category-icon",
+    "CodePath": "bin/plugin.js",
+    "Description": "pulls from mac cal",
+    "Icon": "imgs/plugin/marketplace",
+    "SDKVersion": 2,
+    "Software": {
+        "MinimumVersion": "6.5"
+    },
+    "OS": [
+        {
+            "Platform": "mac",
+            "MinimumVersion": "10.15"
+        }
+    ],
+    "Nodejs": {
+        "Version": "20",
+        "Debug": "enabled"
+    },
+    "UUID": "com.isaac.cal"
 }
