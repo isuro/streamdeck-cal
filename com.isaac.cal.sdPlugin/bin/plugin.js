@@ -7199,7 +7199,10 @@ var wrap = /*@__PURE__*/getDefaultExportFromCjs(wordWrap);
 
 streamDeck.logger.createScope('Hello');
 const eventFilter = (e) => {
-    return e.all_day === 0 && e.availability === 0 && e.title !== '🏠 Personal Commitment';
+    return (e.all_day === 0 &&
+        e.availability === 0 &&
+        e.title !== '🏠 Personal Commitment' &&
+        e.duration < 86400);
 };
 const doAndQueueAction = (actionFn, ev, setIntervalId) => {
     actionFn(ev);

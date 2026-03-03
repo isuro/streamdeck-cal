@@ -15,6 +15,7 @@ type ActionEvent = KeyDownEvent<WatcherSettings> | WillAppearEvent<WatcherSettin
 interface CalEvent {
   title: string;
   calendar: string;
+  duration: number;
   sctime: string; // human readable start time
   ectime: string; // human readable end time
   all_day: number; // 1 or 0
@@ -24,7 +25,12 @@ interface CalEvent {
 }
 
 const eventFilter = (e: CalEvent) => {
-  return e.all_day === 0 && e.availability === 0 && e.title !== '🏠 Personal Commitment';
+  return (
+    e.all_day === 0 &&
+    e.availability === 0 &&
+    e.title !== '🏠 Personal Commitment' &&
+    e.duration < 86400
+  );
 };
 
 const doAndQueueAction = (
