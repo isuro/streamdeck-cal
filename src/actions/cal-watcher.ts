@@ -97,10 +97,7 @@ export class NextEvent extends SingletonAction<WatcherSettings> {
       return;
     }
 
-    ev.action.setTitle(nextEvent.title);
-
     // compute minutes until next event
-    ev.action.setTitle(nextEvent.sctime.toString());
     const now = new Date();
     const startDate = new Date(nextEvent.sctime);
     const minutesRemaining = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60));
