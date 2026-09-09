@@ -1,16 +1,19 @@
 import streamDeck, {
   action,
-  KeyDownEvent,
   SingletonAction,
   WillAppearEvent,
   WillDisappearEvent,
 } from '@elgato/streamdeck';
 import wrap from 'word-wrap';
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
 
 const logger = streamDeck.logger.createScope('Hello');
 
-type ActionEvent = KeyDownEvent<WatcherSettings> | WillAppearEvent<WatcherSettings>;
+type ActionEvent = WillAppearEvent<WatcherSettings>;
+
+const commonIcalPalPaths = ['/opt/homebrew/bin/icalPal', '/usr/local/bin/icalPal'];
+let icalPalPath: string | null = null;
 
 interface CalEvent {
   title: string;
@@ -33,6 +36,37 @@ const eventFilter = (e: CalEvent) => {
   );
 };
 
+const resolveIcalPalPath = (): string => {
+  if (icalPalPath) {
+    return icalPalPath;
+  }
+
+  try {
+    const shellPath = execFileSync('/bin/zsh', ['-lc', 'command -v icalPal'], {
+      encoding: 'utf8',
+    }).trim();
+
+    if (shellPath && existsSync(shellPath)) {
+      icalPalPath = shellPath;
+      return icalPalPath;
+    }
+  } catch {
+    logger.debug('Could not resolve icalPal from shell PATH');
+  }
+
+  const fallbackPath = commonIcalPalPaths.find(existsSync);
+  if (fallbackPath) {
+    icalPalPath = fallbackPath;
+    return icalPalPath;
+  }
+
+  throw new Error('Could not find icalPal. Install it with Homebrew and make sure it is on PATH.');
+};
+
+const runIcalPalJson = (args: string[]): CalEvent[] => {
+  return JSON.parse(execFileSync(resolveIcalPalPath(), args, { encoding: 'utf8' })) as CalEvent[];
+};
+
 const doAndQueueAction = (
   actionFn: (ev: ActionEvent) => Promise<void>,
   ev: ActionEvent,
@@ -41,7 +75,8 @@ const doAndQueueAction = (
   actionFn(ev);
   // update at the start of the next minute, then every minute after that
   const now = new Date();
-  const delay = (60 - now.getSeconds()) * 1000 - 50; // slight offset to ensure we're in the next minute
+  const millisecondsIntoMinute = now.getSeconds() * 1000 + now.getMilliseconds();
+  const delay = 60 * 1000 - millisecondsIntoMinute + 50; // slight offset to ensure we're in the next minute
   setTimeout(() => {
     setIntervalId(setInterval(actionFn, 1000 * 60, ev));
   }, delay);
@@ -52,11 +87,8 @@ export class NextEvent extends SingletonAction<WatcherSettings> {
   intervalId: NodeJS.Timeout | null = null;
 
   async doAction(ev: ActionEvent): Promise<void> {
-    const command = '/opt/homebrew/bin/icalPal eventsToday --ea -n -o json';
-    const events: CalEvent[] = (JSON.parse(execSync(command).toString()) as CalEvent[]).filter(
-      (e: CalEvent) => {
-        return eventFilter(e) && new Date(e.sctime) > new Date();
-      }
+    const events = runIcalPalJson(['eventsToday', '--ea', '-n', '-o', 'json']).filter(
+      (e: CalEvent) => eventFilter(e) && new Date(e.sctime) > new Date()
     );
 
     const nextEvent = events[0];
@@ -71,7 +103,7 @@ export class NextEvent extends SingletonAction<WatcherSettings> {
     ev.action.setTitle(nextEvent.sctime.toString());
     const now = new Date();
     const startDate = new Date(nextEvent.sctime);
-    const minutesRemaining = Math.floor((startDate.getTime() - now.getTime()) / (1000 * 60));
+    const minutesRemaining = Math.ceil((startDate.getTime() - now.getTime()) / (1000 * 60));
     const timeRepresentation =
       minutesRemaining < 60
         ? `${minutesRemaining}m`
@@ -94,12 +126,6 @@ export class NextEvent extends SingletonAction<WatcherSettings> {
     });
   }
 
-  onKeyDown(ev: KeyDownEvent<WatcherSettings>): Promise<void> | void {
-    doAndQueueAction(this.doAction, ev, (interval) => {
-      this.intervalId = interval;
-    });
-  }
-
   onWillDisappear(ev: WillDisappearEvent<WatcherSettings>): void | Promise<void> {
     clearInterval(this.intervalId!);
   }
@@ -111,9 +137,7 @@ export class CurrentEvent extends SingletonAction<WatcherSettings> {
 
   async doAction(ev: ActionEvent) {
     // run shell command to get currentEvent
-    const currentEvents: CalEvent[] = JSON.parse(
-      execSync('/opt/homebrew/bin/icalPal eventsNow --ea -o json').toString()
-    ).filter(eventFilter);
+    const currentEvents = runIcalPalJson(['eventsNow', '--ea', '-o', 'json']).filter(eventFilter);
     const currentEvent = currentEvents[0];
 
     if (!currentEvent) {
@@ -122,7 +146,7 @@ export class CurrentEvent extends SingletonAction<WatcherSettings> {
       return;
     }
 
-    const minutesRemaining = Math.floor(
+    const minutesRemaining = Math.ceil(
       (new Date(currentEvent.ectime).getTime() - new Date().getTime()) / (1000 * 60)
     );
 
@@ -145,12 +169,6 @@ export class CurrentEvent extends SingletonAction<WatcherSettings> {
   }
 
   onWillAppear(ev: WillAppearEvent<WatcherSettings>): void | Promise<void> {
-    doAndQueueAction(this.doAction, ev, (interval) => {
-      this.intervalId = interval;
-    });
-  }
-
-  onKeyDown(ev: KeyDownEvent<WatcherSettings>): Promise<void> | void {
     doAndQueueAction(this.doAction, ev, (interval) => {
       this.intervalId = interval;
     });
